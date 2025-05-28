@@ -1,0 +1,58 @@
+{{define "title"}}Inicio | Biblioteca PUCE{{end}}
+
+{{define "content"}}
+<h2 class="mb-4 text-center">📚 Libros Disponibles</h2>
+
+<div class="text-center mb-4">
+    <a href="/registrar" class="btn btn-primary me-2">Registrar Usuario</a>
+    <a href="/prestamos" class="btn btn-success me-2">Registrar Préstamo</a>
+    <a href="/autores" class="btn btn-secondary">Ver Autores</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm align-middle text-center">
+        <thead class="table-dark">
+            <tr>
+                <th>Portada</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Año</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Libros}}
+            <tr>
+                <td>
+                    <img src="{{.ImagenURL}}" alt="Portada" style="width: 60px; height: auto; border-radius: 4px;">
+                </td>
+                <td>
+                    <a href="/?id={{.ID}}" class="text-decoration-none">{{.Nombre}}</a>
+                </td>
+                <td>{{.Autor}}</td>
+                <td>{{.Ano}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{if .Usuario}}
+  <p class="text-success">Bienvenido, {{.Usuario}} 👋</p>
+{{else}}
+  <p class="text-muted">Inicia sesión para registrar préstamos.</p>
+{{end}}
+
+{{if .Detalle}}
+<div class="card mt-5 border-info shadow">
+    <div class="card-header bg-info text-white">📖 Detalle del Libro</div>
+    <div class="card-body">
+        <h5 class="card-title">{{.Detalle.Nombre}}</h5>
+        <img src="{{.Detalle.ImagenURL}}" alt="Portada del libro" class="mb-3" style="max-width: 200px;">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>Autor:</strong> {{.Detalle.Autor}}</li>
+            <li class="list-group-item"><strong>Año:</strong> {{.Detalle.Ano}}</li>
+            <li class="list-group-item"><strong>Descripción:</strong><br>{{.Detalle.Descripcion}}</li>
+        </ul>
+    </div>
+</div>
+{{end}}
+{{end}}

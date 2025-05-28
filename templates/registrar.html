@@ -1,0 +1,27 @@
+{{define "title"}}Registrar Usuario{{end}}
+
+{{define "content"}}
+<h2 class="mb-4 text-center">Registrar Nuevo Usuario</h2>
+
+<form method="POST" action="/registrar" class="mx-auto p-4 bg-white rounded shadow" style="max-width: 600px;">
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nombre</label>
+    <input type="text" class="form-control" id="nombre" name="nombre" required>
+  </div>
+  <div class="mb-3">
+    <label for="cedula" class="form-label">Cédula</label>
+    <input type="text" class="form-control" id="cedula" name="cedula" required>
+  </div>
+  <div class="mb-3">
+    <label for="ano" class="form-label">Año de Nacimiento</label>
+    <input type="number" class="form-control" id="ano" name="ano" required>
+  </div>
+  <div class="mb-3">
+    <label for="contrasena" class="form-label">Contraseña</label>
+    <input type="password" class="form-control" id="contrasena" name="contrasena" required>
+  </div>
+  <div class="text-end">
+    <button type="submit" class="btn btn-success">Registrar</button>
+  </div>
+</form>
+{{end}}

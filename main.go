@@ -1,3 +1,5 @@
+
+// ======= main.go =======
 package main
 
 import (
@@ -5,47 +7,29 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type Libro struct {
 	ID          int
- nombre      string
-cedula       string
-	Año         int
+	Nombre      string
+	Autor       string
+	Ano         int
 	Descripcion string
 	ImagenURL   string
 }
 
 var libros = []Libro{
-	{
-		ID: 1,
-	 nombre: "Cien Años de Soledad",
-	cedula: "Gabriel García Márquez",
-		Año: 1967,
-		Descripcion: "Una novela sobre la familia Buendía.",
-		ImagenURL: "/static/images.jpeg",
-	},
-	{
-		ID: 2,
-	 nombre: "Don Quijote de la Mancha",
-	cedula: "Miguel de Cervantes",
-		Año: 1605,
-		Descripcion: "Una historia de aventuras y locura.",
-		ImagenURL: "/static/Don_Quijote_de_la_Mancha-Cervantes_Miguel-lg.png",
-	},
-	{
-		ID: 3,
-	 nombre: "La sombra del viento",
-	cedula: "Carlos Ruiz Zafón",
-		Año: 2001,
-		Descripcion: "Misterio y literatura en la Barcelona de posguerra.",
-		ImagenURL: "/static/47856_portada___201609051317.jpg",
-	},
+	{ID: 1, Nombre: "Cien Años de Soledad", Autor: "Gabriel García Márquez", Ano: 1967, Descripcion: "Una novela sobre la familia Buendía.", ImagenURL: "/static/images.jpeg"},
+	{ID: 2, Nombre: "Don Quijote de la Mancha", Autor: "Miguel de Cervantes", Ano: 1605, Descripcion: "Una historia de aventuras y locura.", ImagenURL: "/static/Don_Quijote_de_la_Mancha-Cervantes_Miguel-lg.png"},
+	{ID: 3, Nombre: "La sombra del viento", Autor: "Carlos Ruiz Zafón", Ano: 2001, Descripcion: "Misterio y literatura en la Barcelona de posguerra.", ImagenURL: "/static/47856_portada___201609051317.jpg"},
 }
 
 type DatosPagina struct {
 	Libros  []Libro
 	Detalle *Libro
+	Año     int
+	Usuario string
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
@@ -62,12 +46,19 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	usuario := ""
+	if cookie, err := r.Cookie("usuario"); err == nil {
+		usuario = cookie.Value
+	}
+
 	data := DatosPagina{
 		Libros:  libros,
 		Detalle: libroSeleccionado,
+		Año:     time.Now().Year(),
+		Usuario: usuario,
 	}
 
-	tmpl, err := template.ParseFiles("base.html", "index.html")
+	tmpl, err := template.ParseFiles("templates/base.html", "templates/index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		log.Println("Error en plantilla:", err)
@@ -81,41 +72,18 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func RegistrarHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		tmpl, err := template.ParseFiles("base.html", "registrar.html")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		tmpl.ExecuteTemplate(w, "base", nil)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-	 nombre := r.FormValue( "nombre")
-	cedula := r.FormValue("cedula")
-		anio := r.FormValue("año")
-	
-
-		log.Println("Usuario registrado:")
-		log.Println("Nombre:", nombre)
-		log.Println("Cedula:",cedula)
-		log.Println("fecha de nacimiento:", anio)
-		
-
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-	}
-}
-
 func main() {
-	// Manejar archivos estáticos (como imágenes locales)
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	InitFirebase()
 
-	// Rutas principales
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/registrar", RegistrarHandler)
+	http.HandleFunc("/personas", PersonasHandler)
+	http.HandleFunc("/prestamos", PrestamoHandler)
+	http.HandleFunc("/login", LoginHandler)
+	http.HandleFunc("/logout", LogoutHandler)
 
+	log.Println("✅ Conexión con Firebase Firestore exitosa")
 	log.Println("Servidor corriendo en http://localhost:3000/")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }

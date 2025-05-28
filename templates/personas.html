@@ -1,0 +1,26 @@
+{{define "title"}}Usuarios Registrados{{end}}
+
+{{define "content"}}
+<h2 class="mb-4 text-center">Usuarios Registrados</h2>
+
+<div class="table-responsive">
+  <table class="table table-striped table-hover text-center">
+    <thead class="table-dark">
+      <tr>
+        <th>Nombre</th>
+        <th>Cédula</th>
+        <th>Año de nacimiento</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Personas}}
+      <tr>
+        <td>{{.Nombre}}</td>
+        <td>{{.Cedula}}</td>
+        <td>{{.Ano}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}

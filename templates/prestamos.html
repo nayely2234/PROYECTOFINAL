@@ -1,0 +1,21 @@
+{{define "title"}}Registrar Préstamo{{end}}
+
+{{define "content"}}
+<h2 class="mb-4 text-center">Registrar Préstamo</h2>
+
+<form method="POST" action="/prestamos" class="mx-auto" style="max-width: 600px;">
+  <div class="mb-3">
+    <label for="usuario" class="form-label">Nombre del Usuario</label>
+    <input type="text" class="form-control" id="usuario" name="usuario" required>
+  </div>
+  <div class="mb-3">
+    <label for="libro" class="form-label">Nombre del Libro</label>
+    <input type="text" class="form-control" id="libro" name="libro" required>
+  </div>
+  <div class="mb-3">
+    <label for="fecha" class="form-label">Fecha del Préstamo</label>
+    <input type="date" class="form-control" id="fecha" name="fecha" required>
+  </div>
+  <button type="submit" class="btn btn-success">Registrar</button>
+</form>
+{{end}}
