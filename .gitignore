@@ -1,0 +1,31 @@
+# Archivos y carpetas de Go
+/bin/
+*.exe
+*.exe~
+*.test
+*.out
+
+# Archivos de dependencias
+vendor/
+
+# Archivos temporales y de sistema
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Archivos de configuración de VS Code
+.vscode/
+
+# Archivos de configuración de sistema
+*.bak
+
+# Archivos PDF y otros documentos
+*.pdf
+
+# Archivos de credenciales y configuraciones sensibles
+*.json
+
+# Ignorar carpeta tmp
+/tmp/
