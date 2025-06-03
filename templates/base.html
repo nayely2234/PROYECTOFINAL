@@ -8,60 +8,63 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      background-color: #f2f4f8;
+      background-color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    header {
-      background-image: url("/static/descargar (9).jpeg");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
+    header.hero {
+      background: url('/static/-HEADER.jpeg') center center / cover no-repeat;
+      color: white;
+      padding: 5rem 0;
+      text-align: center;
+    }
+
+    .logo-container {
+      font-size: 2rem;
+      font-weight: bold;
+      border: 3px solid black;
+      padding: 0.5rem 1.5rem;
+      display: inline-block;
+      margin: 1rem auto;
+    }
+
+    .navbar-nav .nav-link {
+      color: #333;
+      font-weight: 500;
     }
 
     main {
-      background-color: rgba(255, 255, 255, 0.95);
-      border-radius: 12px;
-      padding: 2rem;
-    }
-
-    .btn-animate {
-      transition: all 0.3s ease-in-out;
-    }
-
-    .btn-animate:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+      background-color: #f9f9f9;
+      padding: 2rem 0;
     }
 
     footer {
-      background-color: #003366;
+      background-color: #000000;
       color: white;
       text-align: center;
       padding: 1rem;
-      margin-top: 3rem;
     }
   </style>
 </head>
 <body>
-
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <!-- Navbar superior -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
     <div class="container">
-      <a class="navbar-brand fw-bold" href="/">
-        <img src="/static/book-cartoon-illustration-school-start-reading-reading-book_539915_wh860.png" alt="Logo" width="30" class="me-2">
-        Biblioteca PUCE
-      </a>
+      <a class="navbar-brand" href="/">Inicio</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/">Inicio</a></li>
           <li class="nav-item"><a class="nav-link" href="/libros">Libros</a></li>
           <li class="nav-item"><a class="nav-link" href="/prestamos">Registrar Préstamo</a></li>
+          {{if eq .Rol "admin"}}
           <li class="nav-item"><a class="nav-link" href="/personas">Usuarios</a></li>
+          <li class="nav-item"><a class="nav-link" href="/registrar-libro">Registrar Libro</a></li>
+          {{end}}
           {{if .Usuario}}
-            <li class="nav-item"><a class="nav-link disabled">👤 {{.Usuario}}</a></li>
+          <li class="nav-item"><a class="nav-link" href="/prestamos-usuario">Mis Préstamos</a></li>
+          <li class="nav-item"><a class="nav-link disabled">👤 {{.Usuario}}</a></li>
             <li class="nav-item"><a class="nav-link text-danger" href="/logout">Cerrar sesión</a></li>
           {{else}}
             <li class="nav-item dropdown">
@@ -79,19 +82,25 @@
     </div>
   </nav>
 
-  <header class="text-white text-center py-5">
+  <!-- Logo tipo marca -->
+  <div class="text-center mt-4">
+    <div class="logo-container">Biblioteca PUCE</div>
+  </div>
+
+  <!-- Hero con imagen -->
+  <header class="hero">
     <div class="container">
-      <h1 class="display-5 fw-bold">Sistema de Préstamos de Libros</h1>
-      <p class="lead">Gestión académica de usuarios, libros y préstamos</p>
+      <h1 class="display-4">Sistema de Préstamos de Libros</h1>
+      <p class="lead">“Un lector vive mil vidas antes de morir. El que nunca lee vive solo una.”</p>
     </div>
   </header>
 
-  <main class="container my-5 shadow">
+  <main class="container">
     {{block "content" .}}{{end}}
   </main>
 
   <footer>
-    <p class="mb-0">© {{.Año}} Biblioteca PUCE - Proyecto de Integración</p>
+    <p class="mb-0">© {{.Año}} Biblioteca PUCE - Proyecto de Aplicaciones Web</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

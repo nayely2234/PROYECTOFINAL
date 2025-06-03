@@ -1,0 +1,32 @@
+{{define "title"}}Mis Préstamos{{end}}
+
+{{define "content"}}
+<h2 class="mb-4 text-center">📚 Mis Préstamos</h2>
+
+{{if .Prestamos}}
+  <div class="list-group">
+    {{range .Prestamos}}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-1">{{.Libro}}</h5>
+          <small>Fecha del Préstamo: {{.Fecha}}</small>
+        </div>
+        <div class="btn-group">
+          <form method="POST" action="/editar-prestamo" class="d-flex align-items-center">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <input type="date" name="fecha" class="form-control form-control-sm me-2" required>
+            <button type="submit" class="btn btn-primary btn-sm">Editar</button>
+          </form>
+          <form method="POST" action="/devolver-prestamo" class="ms-2">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button type="submit" class="btn btn-danger btn-sm">Devolver</button>
+          </form>
+        </div>
+      </div>
+    {{end}}
+  </div>
+{{else}}
+  <p class="text-muted text-center">No tienes préstamos registrados actualmente.</p>
+{{end}}
+
+{{end}}

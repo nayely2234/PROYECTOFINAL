@@ -1,17 +1,17 @@
-
-// ======= main.go =======
 package main
 
 import (
+	"context"
 	"html/template"
 	"log"
 	"net/http"
-	"strconv"
+
+	//fresh"strconv"
 	"time"
 )
 
 type Libro struct {
-	ID          int
+	ID          string
 	Nombre      string
 	Autor       string
 	Ano         int
@@ -19,36 +19,59 @@ type Libro struct {
 	ImagenURL   string
 }
 
-var libros = []Libro{
-	{ID: 1, Nombre: "Cien Años de Soledad", Autor: "Gabriel García Márquez", Ano: 1967, Descripcion: "Una novela sobre la familia Buendía.", ImagenURL: "/static/images.jpeg"},
-	{ID: 2, Nombre: "Don Quijote de la Mancha", Autor: "Miguel de Cervantes", Ano: 1605, Descripcion: "Una historia de aventuras y locura.", ImagenURL: "/static/Don_Quijote_de_la_Mancha-Cervantes_Miguel-lg.png"},
-	{ID: 3, Nombre: "La sombra del viento", Autor: "Carlos Ruiz Zafón", Ano: 2001, Descripcion: "Misterio y literatura en la Barcelona de posguerra.", ImagenURL: "/static/47856_portada___201609051317.jpg"},
-}
-
 type DatosPagina struct {
 	Libros  []Libro
 	Detalle *Libro
 	Año     int
 	Usuario string
+	Rol     string
 }
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+	iter := FirestoreClient.Collection("libro").Documents(ctx)
+
+	var libros []Libro
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+		data := doc.Data()
+
+		nombre, _ := data["nombre"].(string)
+		autor, _ := data["autor"].(string)
+		descripcion, _ := data["descripcion"].(string)
+		imagen, _ := data["imagen"].(string)
+		anoFloat, _ := data["ano"].(int64)
+		ano := int(anoFloat)
+
+		libros = append(libros, Libro{
+			ID:          doc.Ref.ID,
+			Nombre:      nombre,
+			Autor:       autor,
+			Descripcion: descripcion,
+			Ano:         ano,
+			ImagenURL:   imagen,
+		})
+	}
+
 	var libroSeleccionado *Libro
-	idStr := r.URL.Query().Get("id")
-	if idStr != "" {
-		if id, err := strconv.Atoi(idStr); err == nil {
-			for _, libro := range libros {
-				if libro.ID == id {
-					libroSeleccionado = &libro
-					break
-				}
-			}
+	id := r.URL.Query().Get("id")
+	for _, libro := range libros {
+		if libro.ID == id {
+			libroSeleccionado = &libro
+			break
 		}
 	}
 
 	usuario := ""
+	rol := ""
 	if cookie, err := r.Cookie("usuario"); err == nil {
 		usuario = cookie.Value
+	}
+	if cookie, err := r.Cookie("rol"); err == nil {
+		rol = cookie.Value
 	}
 
 	data := DatosPagina{
@@ -56,6 +79,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		Detalle: libroSeleccionado,
 		Año:     time.Now().Year(),
 		Usuario: usuario,
+		Rol:     rol,
 	}
 
 	tmpl, err := template.ParseFiles("templates/base.html", "templates/index.html")
@@ -82,8 +106,15 @@ func main() {
 	http.HandleFunc("/prestamos", PrestamoHandler)
 	http.HandleFunc("/login", LoginHandler)
 	http.HandleFunc("/logout", LogoutHandler)
+	http.HandleFunc("/registrar-libro", RegistrarLibroHandler)
+	http.HandleFunc("/mis-prestamos", MisPrestamosHandler)
+	http.HandleFunc("/editar-prestamo", EditarPrestamoHandler)
+	http.HandleFunc("/devolver-prestamo", DevolverPrestamoHandler)
+	
 
-	log.Println("✅ Conexión con Firebase Firestore exitosa")
+
+
+
 	log.Println("Servidor corriendo en http://localhost:3000/")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }

@@ -1,0 +1,28 @@
+{{define "title"}}Registrar Libro{{end}}
+
+{{define "content"}}
+<h2 class="text-center mb-4">Registrar Nuevo Libro</h2>
+<form method="POST" action="/registrar-libro" class="mx-auto" style="max-width: 600px;">
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nombre del Libro</label>
+    <input type="text" class="form-control" id="nombre" name="nombre" required>
+  </div>
+  <div class="mb-3">
+    <label for="autor" class="form-label">Autor</label>
+    <input type="text" class="form-control" id="autor" name="autor" required>
+  </div>
+  <div class="mb-3">
+    <label for="ano" class="form-label">Año de Publicación</label>
+    <input type="number" class="form-control" id="ano" name="ano" required>
+  </div>
+  <div class="mb-3">
+    <label for="descripcion" class="form-label">Descripción</label>
+    <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+  </div>
+  <div class="mb-3">
+    <label for="imagen" class="form-label">URL de la Imagen</label>
+    <input type="text" class="form-control" id="imagen" name="imagen" placeholder="https://..." required>
+  </div>
+  <button type="submit" class="btn btn-primary">Registrar</button>
+</form>
+{{end}}

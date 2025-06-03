@@ -1,44 +1,38 @@
 {{define "title"}}Inicio | Biblioteca PUCE{{end}}
 
 {{define "content"}}
-<h2 class="mb-4 text-center">📚 Libros Disponibles</h2>
+<!-- Sección de portada motivadora dentro del título -->
+<section class="text-center text-white py-5 mb-4" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/static/book-background.jpg') no-repeat center center; background-size: cover;">
+  <div class="container">
+    <h1 class="display-4 fw-bold">📚 Libros Disponibles</h1>
+    <p class="lead mt-3">“Un lector vive mil vidas antes de morir. El que nunca lee vive solo una.”</p>
+    <p>Descubre nuevas historias, viaja sin moverte y crece con cada página.</p>
+  </div>
+</section>
 
 <div class="text-center mb-4">
-    <a href="/registrar" class="btn btn-primary me-2">Registrar Usuario</a>
-    <a href="/prestamos" class="btn btn-success me-2">Registrar Préstamo</a>
-    <a href="/autores" class="btn btn-secondary">Ver Autores</a>
+    <a href="/prestamos" class="btn btn-success me-2">Registrar Préstamo abc</a>
+    
 </div>
 
-<div class="table-responsive">
-    <table class="table table-bordered table-hover shadow-sm align-middle text-center">
-        <thead class="table-dark">
-            <tr>
-                <th>Portada</th>
-                <th>Título</th>
-                <th>Autor</th>
-                <th>Año</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Libros}}
-            <tr>
-                <td>
-                    <img src="{{.ImagenURL}}" alt="Portada" style="width: 60px; height: auto; border-radius: 4px;">
-                </td>
-                <td>
-                    <a href="/?id={{.ID}}" class="text-decoration-none">{{.Nombre}}</a>
-                </td>
-                <td>{{.Autor}}</td>
-                <td>{{.Ano}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
+<div class="container">
+  {{range .Libros}}
+  <div class="book-entry mb-4 d-flex bg-white shadow-sm rounded overflow-hidden">
+    <img src="{{.ImagenURL}}" alt="Portada" style="width: 160px; height: auto; object-fit: cover;">
+    <div class="p-3 flex-fill">
+      <h5 class="fw-bold mb-1">{{.Nombre}}</h5>
+      <p class="mb-2 text-muted">{{.Descripcion}}</p>
+      <p class="mb-1"><strong>Autor:</strong> {{.Autor}}</p>
+      <p><strong>Año:</strong> {{.Ano}}</p>
+    </div>
+  </div>
+  {{end}}
 </div>
+
 {{if .Usuario}}
-  <p class="text-success">Bienvenido, {{.Usuario}} 👋</p>
+  <p class="text-success text-center">Bienvenido, {{.Usuario}} 👋</p>
 {{else}}
-  <p class="text-muted">Inicia sesión para registrar préstamos.</p>
+  <p class="text-muted text-center">Inicia sesión para registrar préstamos.</p>
 {{end}}
 
 {{if .Detalle}}
