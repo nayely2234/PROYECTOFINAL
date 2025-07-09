@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
-	firebase "firebase.google.com/go/v4"
 	"cloud.google.com/go/firestore"
+	firebase "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 )
 
@@ -14,21 +15,29 @@ var FirestoreClient *firestore.Client
 func InitFirebase() {
 	ctx := context.Background()
 
-	// Ruta al archivo de credenciales JSON
-	sa := option.WithCredentialsFile("basebiblioteca-fe7d5-firebase-adminsdk-fbsvc-fa72da49bb.json")
+	// ✅ Lee el JSON desde la variable de entorno
+	credJSON := []byte(os.Getenv("FIREBASE_CREDENTIALS"))
 
-	// Configuración explícita con el project ID
+	// Verifica que exista
+	if len(credJSON) == 0 {
+		log.Fatal("FIREBASE_CREDENTIALS no está definida o está vacía")
+	}
+
+	// Configura la opción con JSON en memoria
+	opt := option.WithCredentialsJSON(credJSON)
+
+	// Config explícita con tu Project ID (opcional)
 	config := &firebase.Config{
 		ProjectID: "basebiblioteca-fe7d5",
 	}
 
-	// Inicializar la app con configuración y credenciales
-	app, err := firebase.NewApp(ctx, config, sa)
+	// Inicializa la App
+	app, err := firebase.NewApp(ctx, config, opt)
 	if err != nil {
 		log.Fatalf("Error inicializando Firebase: %v", err)
 	}
 
-	// Inicializar cliente Firestore
+	// Inicializa el cliente Firestore
 	client, err := app.Firestore(ctx)
 	if err != nil {
 		log.Fatalf("Error inicializando Firestore: %v", err)
