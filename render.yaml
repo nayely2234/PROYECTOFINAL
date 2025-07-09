@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: SISTEMA-DE-PRESTAMOS-PUCE
+    env: go
+    buildCommand: go build -o app
+    startCommand: ./app

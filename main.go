@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -111,8 +112,14 @@ func main() {
 	http.HandleFunc("/mis-prestamos", MisPrestamosHandler)
 	http.HandleFunc("/editar-prestamo", EditarPrestamoHandler)
 	http.HandleFunc("/devolver-prestamo", DevolverPrestamoHandler)
-	// http.HandleFunc("/buscar", BuscarHandler) // Descomenta solo si existe
+	// http.HandleFunc("/buscar", BuscarHandler) // Descomenta si existe
 
-	log.Println("Servidor corriendo en http://localhost:3000/")
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	// 🚩 Usa el puerto dinámico de Render
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" // fallback local
+	}
+
+	log.Println("Servidor corriendo en puerto:", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
