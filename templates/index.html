@@ -1,52 +1,73 @@
 {{define "title"}}Inicio | Biblioteca PUCE{{end}}
 
 {{define "content"}}
-<!-- Sección de portada motivadora dentro del título -->
-<section class="text-center text-white py-5 mb-4" style="background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/static/book-background.jpg') no-repeat center center; background-size: cover;">
-  <div class="container">
-    <h1 class="display-4 fw-bold">📚 Libros Disponibles</h1>
-    <p class="lead mt-3">“Un lector vive mil vidas antes de morir. El que nunca lee vive solo una.”</p>
-    <p>Descubre nuevas historias, viaja sin moverte y crece con cada página.</p>
-  </div>
-</section>
 
+<!-- Botón principal -->
 <div class="text-center mb-4">
-    <a href="/prestamos" class="btn btn-success me-2">Registrar Préstamo abc</a>
-    
+  {{if .Usuario}}
+    <a href="/prestamos" class="btn btn-success btn-rounded">Registrar Préstamo</a>
+  {{else}}
+    <button type="button" class="btn btn-success btn-rounded"
+            data-bs-toggle="modal" data-bs-target="#debeRegistrarModal">
+      Registrar Préstamo
+    </button>
+  {{end}}
 </div>
 
+<!-- Modal -->
+<div class="modal fade" id="debeRegistrarModal" tabindex="-1" aria-labelledby="debeRegistrarModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Registro Requerido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        ⚠️ Debes iniciar sesión o registrarte para realizar un préstamo.
+      </div>
+      <div class="modal-footer">
+        <a href="/login" class="btn btn-primary btn-rounded">Iniciar Sesión</a>
+        <a href="/registrar" class="btn btn-success btn-rounded">Registrarse</a>
+        <button type="button" class="btn btn-secondary btn-rounded" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Libros -->
 <div class="container">
   {{range .Libros}}
-  <div class="book-entry mb-4 d-flex bg-white shadow-sm rounded overflow-hidden">
-    <img src="{{.ImagenURL}}" alt="Portada" style="width: 160px; height: auto; object-fit: cover;">
-    <div class="p-3 flex-fill">
-      <h5 class="fw-bold mb-1">{{.Nombre}}</h5>
-      <p class="mb-2 text-muted">{{.Descripcion}}</p>
-      <p class="mb-1"><strong>Autor:</strong> {{.Autor}}</p>
-      <p><strong>Año:</strong> {{.Ano}}</p>
+  <div class="card mb-4 shadow-sm book-card">
+    <div class="row g-0">
+      <div class="col-md-3">
+        <img src="{{.ImagenURL}}" alt="Portada" class="img-fluid rounded-start">
+      </div>
+      <div class="col-md-9">
+        <div class="card-body">
+          <h5 class="card-title">{{.Nombre}}</h5>
+          <p class="card-text">{{.Descripcion}}</p>
+          <p class="card-text"><strong>Autor:</strong> {{.Autor}}</p>
+          <p class="card-text"><strong>Año:</strong> {{.Ano}}</p>
+          <p class="card-text">
+            <strong>Estado:</strong>
+            {{if .Disponible}}
+              <span class="badge bg-success">Disponible ✅</span>
+            {{else}}
+              <span class="badge bg-danger">No disponible ❌</span>
+            {{end}}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
   {{end}}
 </div>
 
+<!-- Mensaje de sesión -->
 {{if .Usuario}}
   <p class="text-success text-center">Bienvenido, {{.Usuario}} 👋</p>
 {{else}}
   <p class="text-muted text-center">Inicia sesión para registrar préstamos.</p>
 {{end}}
 
-{{if .Detalle}}
-<div class="card mt-5 border-info shadow">
-    <div class="card-header bg-info text-white">📖 Detalle del Libro</div>
-    <div class="card-body">
-        <h5 class="card-title">{{.Detalle.Nombre}}</h5>
-        <img src="{{.Detalle.ImagenURL}}" alt="Portada del libro" class="mb-3" style="max-width: 200px;">
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item"><strong>Autor:</strong> {{.Detalle.Autor}}</li>
-            <li class="list-group-item"><strong>Año:</strong> {{.Detalle.Ano}}</li>
-            <li class="list-group-item"><strong>Descripción:</strong><br>{{.Detalle.Descripcion}}</li>
-        </ul>
-    </div>
-</div>
-{{end}}
 {{end}}

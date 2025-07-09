@@ -3,27 +3,111 @@
 {{define "content"}}
 <h2 class="mb-4 text-center">Registrar Préstamo</h2>
 
+<style>
+  .search-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 15px 50px 15px 50px;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
+  }
+
+  .search-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(100, 149, 237, 0.3);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+  }
+
+  /* ✅ Estilo para botón Registrar con color personalizado */
+  .btn-registrar {
+    background-color: #b7c879;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-registrar:hover {
+    background-color: #a3bc3e; /* Un verde un poquito más fuerte */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+</style>
+
+<!-- ✅ Bloque de alerta FUERA del form -->
+{{if .Query.error}}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{if eq .Query.error "no_disponible"}}❌ Este libro ya no está disponible. Elige otro por favor.{{end}}
+    {{if eq .Query.error "incompleto"}}⚠️ Faltan datos para registrar el préstamo.{{end}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{{end}}
+
 <form method="POST" action="/prestamos" class="mx-auto" style="max-width: 600px;">
-  <div class="mb-3">
+
+  <!-- Nombre del Libro -->
+  <div class="search-container">
     <label for="libro" class="form-label">Nombre del Libro</label>
-<input list="librosDisponibles" class="form-control" id="libro" name="libro" placeholder="Escribe para buscar..." required>
+    <i class="search-icon">📚</i>
+    <input 
+      list="librosDisponibles"
+      type="text"
+      id="libro"
+      name="libro"
+      class="search-input"
+      placeholder="Escribe para buscar..."
+      required>
+    <datalist id="librosDisponibles">
+      {{range .Libros}}
+        <option value="{{.Nombre}}">
+      {{end}}
+    </datalist>
+  </div>
 
-<datalist id="librosDisponibles">
-  {{range .Libros}}
-    <option value="{{.Nombre}}">{{.Nombre}}</option>
-  {{end}}
-</datalist>
-
+  <!-- Nombre del Usuario -->
+  <div class="search-container">
     <label for="usuario" class="form-label">Nombre del Usuario</label>
-    <input type="text" class="form-control" id="usuario" name="usuario" required>
+    <i class="search-icon">👤</i>
+    <input 
+      type="text" 
+      id="usuario" 
+      name="usuario" 
+      class="search-input"
+      value="{{.Usuario}}" 
+      readonly>
   </div>
-  <div class="mb-3">
-  
 
-  <div class="mb-3">
+  <!-- Fecha del Préstamo -->
+  <div class="search-container">
     <label for="fecha" class="form-label">Fecha del Préstamo</label>
-    <input type="date" class="form-control" id="fecha" name="fecha" required>
+    <i class="search-icon">📅</i>
+    <input 
+      type="date" 
+      id="fecha" 
+      name="fecha" 
+      class="search-input"
+      required>
   </div>
-  <button type="submit" class="btn btn-success">Registrar</button>
+
+  <!-- ✅ Botón Registrar con clase personalizada -->
+  <div class="text-center">
+    <button type="submit" class="btn-registrar">Registrar</button>
+  </div>
 </form>
 {{end}}

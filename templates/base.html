@@ -11,44 +11,60 @@
       background-color: #ffffff;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     header.hero {
       background: url('/static/-HEADER.jpeg') center center / cover no-repeat;
       color: white;
       padding: 5rem 0;
       text-align: center;
     }
-
     .logo-container {
       font-size: 2rem;
       font-weight: bold;
-      border: 3px solid black;
-      padding: 0.5rem 1.5rem;
+      border: 3px solid #000000;
+      border-radius: 50px;
+      padding: 0.5rem 2rem;
       display: inline-block;
       margin: 1rem auto;
+      background-color: white;
+      color: #000000;
     }
-
     .navbar-nav .nav-link {
-      color: #333;
+      color: #000000;
       font-weight: 500;
     }
-
     main {
       background-color: #f9f9f9;
       padding: 2rem 0;
     }
-
     footer {
       background-color: #000000;
       color: white;
       text-align: center;
       padding: 1rem;
     }
+    /* Animación de botones */
+    .btn-rounded {
+      border-radius: 50px;
+      padding: 0.6rem 1.5rem;
+      transition: all 0.3s ease;
+    }
+    .btn-rounded:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+    }
+    .book-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: 20px;
+    }
+    .book-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
   <!-- Navbar superior -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm sticky-top">
     <div class="container">
       <a class="navbar-brand" href="/">Inicio</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -56,26 +72,26 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/libros">Libros</a></li>
+          <li class="nav-item"><a class="nav-link" href="/">Libros</a></li>
           <li class="nav-item"><a class="nav-link" href="/prestamos">Registrar Préstamo</a></li>
           {{if eq .Rol "admin"}}
           <li class="nav-item"><a class="nav-link" href="/personas">Usuarios</a></li>
           <li class="nav-item"><a class="nav-link" href="/registrar-libro">Registrar Libro</a></li>
           {{end}}
           {{if .Usuario}}
-          <li class="nav-item"><a class="nav-link" href="/prestamos-usuario">Mis Préstamos</a></li>
+          <li class="nav-item"><a class="nav-link" href="/mis-prestamos">Mis Préstamos</a></li>
           <li class="nav-item"><a class="nav-link disabled">👤 {{.Usuario}}</a></li>
-            <li class="nav-item"><a class="nav-link text-danger" href="/logout">Cerrar sesión</a></li>
+          <li class="nav-item"><a class="nav-link text-danger" href="/logout">Cerrar sesión</a></li>
           {{else}}
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle text-success" href="#" id="navbarLogin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Iniciar sesión
-              </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarLogin">
-                <li><a class="dropdown-item" href="/login">Ingresar</a></li>
-                <li><a class="dropdown-item" href="/registrar">Registrarse</a></li>
-              </ul>
-            </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle text-success" href="#" id="navbarLogin" role="button" data-bs-toggle="dropdown">
+              Iniciar sesión
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarLogin">
+              <li><a class="dropdown-item" href="/login">Ingresar</a></li>
+              <li><a class="dropdown-item" href="/registrar">Registrarse</a></li>
+            </ul>
+          </li>
           {{end}}
         </ul>
       </div>
@@ -90,7 +106,7 @@
   <!-- Hero con imagen -->
   <header class="hero">
     <div class="container">
-      <h1 class="display-4">Sistema de Préstamos de Libros</h1>
+      <h1 class="display-4 fw-bold">Sistema de Préstamos de Libros</h1>
       <p class="lead">“Un lector vive mil vidas antes de morir. El que nunca lee vive solo una.”</p>
     </div>
   </header>

@@ -5,18 +5,17 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-
-	//fresh"strconv"
 	"time"
 )
 
 type Libro struct {
-	ID          string
-	Nombre      string
-	Autor       string
-	Ano         int
-	Descripcion string
-	ImagenURL   string
+	ID          string `firestore:"-"`
+	Nombre      string `firestore:"nombre"`
+	Autor       string `firestore:"autor"`
+	Descripcion string `firestore:"descripcion"`
+	ImagenURL   string `firestore:"imagen"`
+	Ano         int    `firestore:"ano"`
+	Disponible  bool   `firestore:"disponible"`
 }
 
 type DatosPagina struct {
@@ -45,6 +44,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		imagen, _ := data["imagen"].(string)
 		anoFloat, _ := data["ano"].(int64)
 		ano := int(anoFloat)
+		disponible, _ := data["disponible"].(bool)
 
 		libros = append(libros, Libro{
 			ID:          doc.Ref.ID,
@@ -53,6 +53,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 			Descripcion: descripcion,
 			Ano:         ano,
 			ImagenURL:   imagen,
+			Disponible:  disponible,
 		})
 	}
 
@@ -110,10 +111,7 @@ func main() {
 	http.HandleFunc("/mis-prestamos", MisPrestamosHandler)
 	http.HandleFunc("/editar-prestamo", EditarPrestamoHandler)
 	http.HandleFunc("/devolver-prestamo", DevolverPrestamoHandler)
-	
-
-
-
+	// http.HandleFunc("/buscar", BuscarHandler) // Descomenta solo si existe
 
 	log.Println("Servidor corriendo en http://localhost:3000/")
 	log.Fatal(http.ListenAndServe(":3000", nil))

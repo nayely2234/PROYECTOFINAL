@@ -3,23 +3,48 @@
 {{define "content"}}
 <h2 class="mb-4 text-center">📚 Mis Préstamos</h2>
 
+<!-- ✅ ALERTAS -->
+{{if .Query.success}}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    ✅ Préstamo editado correctamente.
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{{end}}
+
+{{if .Query.error}}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{if eq .Query.error "mismo"}}❌ La nueva fecha no puede ser igual a la actual.{{end}}
+    {{if eq .Query.error "incompleto"}}⚠️ Faltan datos para editar el préstamo.{{end}}
+    {{if eq .Query.error "ocupado"}}❌ Ya existe un préstamo con esa fecha y libro.{{end}}
+    {{if eq .Query.error "max_15_dias"}}⚠️ La fecha supera el límite de 15 días permitidos.{{end}}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{{end}}
+
 {{if .Prestamos}}
   <div class="list-group">
     {{range .Prestamos}}
-      <div class="list-group-item d-flex justify-content-between align-items-center">
+      <div class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2 rounded">
         <div>
-          <h5 class="mb-1">{{.Libro}}</h5>
-          <small>Fecha del Préstamo: {{.Fecha}}</small>
+          <h5 class="mb-1 fw-bold">{{.Libro}}</h5>
+          <small class="text-muted">Fecha del Préstamo: {{.Fecha}}</small>
         </div>
         <div class="btn-group">
-          <form method="POST" action="/editar-prestamo" class="d-flex align-items-center">
-            <input type="hidden" name="id" value="{{.ID}}">
-            <input type="date" name="fecha" class="form-control form-control-sm me-2" required>
-            <button type="submit" class="btn btn-primary btn-sm">Editar</button>
-          </form>
+          <!-- ✅ BOTÓN EDITAR -->
+          <button type="button"
+                  class="btn btn-editar btn-sm btn-anim"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editarModal"
+                  data-id="{{.ID}}"
+                  data-libro="{{.Libro}}"
+                  data-fecha="{{.Fecha}}">
+            ✏️ Editar
+          </button>
+
+          <!-- ✅ BOTÓN DEVOLVER -->
           <form method="POST" action="/devolver-prestamo" class="ms-2">
             <input type="hidden" name="id" value="{{.ID}}">
-            <button type="submit" class="btn btn-danger btn-sm">Devolver</button>
+            <button type="submit" class="btn btn-devolver btn-sm btn-anim">🗑️ Devolver</button>
           </form>
         </div>
       </div>
@@ -29,4 +54,115 @@
   <p class="text-muted text-center">No tienes préstamos registrados actualmente.</p>
 {{end}}
 
+<!-- ✅ MODAL EDITAR -->
+<div class="modal fade" id="editarModal" tabindex="-1" aria-labelledby="editarModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="/editar-prestamo" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editarModalLabel">Editar Préstamo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Libro:</strong> <span id="modalLibro"></span></p>
+        <p><strong>Fecha actual:</strong> <span id="modalFechaActual"></span></p>
+
+        <div class="mb-3">
+          <label for="modalFechaNueva" class="form-label">Nueva Fecha</label>
+          <input type="date" class="form-control" id="modalFechaNueva" name="fecha" required>
+        </div>
+
+        <input type="hidden" name="id" id="modalPrestamoId">
+        <input type="hidden" name="fecha_actual" id="modalFechaOculta">
+
+        <div id="modalError" class="alert alert-danger d-none mt-2"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ✅ ESTILOS PERSONALIZADOS -->
+<style>
+  .btn-anim {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-anim:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+
+  .btn-editar {
+    background-color: #86B879;  /* LIME LOLLIPOP */
+    border: none;
+    color: #fff;
+  }
+  .btn-editar:hover {
+    background-color: #76A869;
+    color: #fff;
+  }
+
+  .btn-devolver {
+    background-color: #F297A0;  /* PRIMROSE GARDEN */
+    border: none;
+    color: #fff;
+  }
+  .btn-devolver:hover {
+    background-color: #E1707B;
+    color: #fff;
+  }
+</style>
+
+<!-- ✅ SCRIPT VALIDACIÓN -->
+<script>
+  const editarModal = document.getElementById('editarModal');
+  editarModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const id = button.getAttribute('data-id');
+    const libro = button.getAttribute('data-libro');
+    const fecha = button.getAttribute('data-fecha');
+
+    document.getElementById('modalPrestamoId').value = id;
+    document.getElementById('modalLibro').textContent = libro;
+    document.getElementById('modalFechaActual').textContent = fecha;
+    document.getElementById('modalFechaNueva').value = '';
+    document.getElementById('modalFechaOculta').value = fecha;
+    document.getElementById('modalError').classList.add('d-none');
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const max = new Date();
+    max.setDate(max.getDate() + 15);
+    const maxStr = max.toISOString().split('T')[0];
+    document.getElementById('modalFechaNueva').setAttribute('min', hoy);
+    document.getElementById('modalFechaNueva').setAttribute('max', maxStr);
+  });
+
+  const modalForm = editarModal.querySelector('form');
+  modalForm.addEventListener('submit', function (event) {
+    const fechaNueva = document.getElementById('modalFechaNueva').value;
+    const fechaActual = document.getElementById('modalFechaOculta').value;
+
+    if (fechaNueva === fechaActual) {
+      event.preventDefault();
+      const errorDiv = document.getElementById('modalError');
+      errorDiv.textContent = '❌ La nueva fecha no puede ser igual a la fecha actual.';
+      errorDiv.classList.remove('d-none');
+      return;
+    }
+
+    const fechaNuevaDate = new Date(fechaNueva);
+    const hoy = new Date();
+    const max = new Date();
+    max.setDate(max.getDate() + 15);
+
+    if (fechaNuevaDate < hoy || fechaNuevaDate > max) {
+      event.preventDefault();
+      const errorDiv = document.getElementById('modalError');
+      errorDiv.textContent = '⚠️ La nueva fecha debe estar dentro de los próximos 15 días.';
+      errorDiv.classList.remove('d-none');
+    }
+  });
+</script>
 {{end}}

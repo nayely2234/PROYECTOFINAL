@@ -1,0 +1,11 @@
+<h1>Resultados para "{{.Query}}"</h1>
+
+{{if .Libros}}
+    <ul>
+    {{range .Libros}}
+        <li><strong>{{.Nombre}}</strong> — Autor: {{.Autor}} — Año: {{.Ano}}</li>
+    {{end}}
+    </ul>
+{{else}}
+    <p>No se encontraron resultados.</p>
+{{end}}

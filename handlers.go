@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -29,12 +30,27 @@ type PrestamoListado struct {
 	Fecha  string
 }
 
-// MisPrestamosHandler maneja las solicitudes HTTP para mostrar los préstamos asociados a un usuario.
-// Extrae la información del usuario desde la solicitud y responde con los datos correspondientes.
-// Parámetros:
-//   - w: http.ResponseWriter para enviar la respuesta HTTP.
-//   - r: *http.Request que contiene los detalles de la solicitud HTTP.
-func MisPrestamosHandler(w http.ResponseWriter, r *http.Request) {
+func InicioHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	iter := FirestoreClient.Collection("libro").Documents(ctx)
+
+	var libros []Libro
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+
+		var libro Libro
+		if err := doc.DataTo(&libro); err != nil {
+			log.Println("Error map Libro:", err)
+			continue
+		}
+
+		libros = append(libros, libro)
+	}
+
 	usuario := ""
 	rol := ""
 	if c, err := r.Cookie("usuario"); err == nil {
@@ -43,13 +59,44 @@ func MisPrestamosHandler(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie("rol"); err == nil {
 		rol = c.Value
 	}
+
+	data := struct {
+		Libros  []Libro
+		Usuario string
+		Rol     string
+		Año     int
+	}{
+		Libros:  libros,
+		Usuario: usuario,
+		Rol:     rol,
+		Año:     time.Now().Year(),
+	}
+
+	renderTemplate(w, r, "index.html", data)
+}
+
+// Libro representa un libro en la colección de Firestore
+func MisPrestamosHandler(w http.ResponseWriter, r *http.Request) {
+	usuario := ""
+	rol := ""
+
+	// ✅ Lógica básica para obtener cookies
+	if c, err := r.Cookie("usuario"); err == nil {
+		usuario = c.Value
+	}
+	if c, err := r.Cookie("rol"); err == nil {
+		rol = c.Value
+	}
+
 	if usuario == "" {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
+	// ✅ Trae SOLO préstamos del usuario logueado
 	ctx := context.Background()
 	iter := FirestoreClient.Collection("prestamos").Where("usuario", "==", usuario).Documents(ctx)
+
 	var prestamos []PrestamoListado
 	for {
 		doc, err := iter.Next()
@@ -59,30 +106,43 @@ func MisPrestamosHandler(w http.ResponseWriter, r *http.Request) {
 		data := doc.Data()
 		libro, _ := data["libro"].(string)
 		fecha, _ := data["fecha"].(string)
+
 		prestamos = append(prestamos, PrestamoListado{
 			ID:    doc.Ref.ID,
 			Libro: libro,
 			Fecha: fecha,
 		})
 	}
-	tmpl, err := template.New("mis_prestamos.html").Funcs(template.FuncMap{"safe": func(s string) template.HTML { return template.HTML(s) }}).ParseFiles("templates/base.html", "templates/mis_prestamos.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+
 	data := struct {
 		Prestamos []PrestamoListado
 		Año       int
 		Usuario   string
 		Rol       string
+		Query     map[string]string
 	}{
 		Prestamos: prestamos,
 		Año:       time.Now().Year(),
 		Usuario:   usuario,
 		Rol:       rol,
+		Query: map[string]string{
+			"error":   r.URL.Query().Get("error"),
+			"success": r.URL.Query().Get("success"),
+		},
 	}
+
+	tmpl, err := template.New("mis_prestamos.html").Funcs(template.FuncMap{
+		"safe": func(s string) template.HTML { return template.HTML(s) },
+	}).ParseFiles("templates/base.html", "templates/mis_prestamos.html")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	tmpl.ExecuteTemplate(w, "base", data)
 }
+
 
 func EditarPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -92,36 +152,62 @@ func EditarPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := r.FormValue("id")
 	fecha := r.FormValue("fecha")
+
 	if id == "" || fecha == "" {
-		http.Error(w, "Datos incompletos", http.StatusBadRequest)
+		http.Redirect(w, r, "/mis-prestamos?error=incompleto", http.StatusSeeOther)
 		return
 	}
-	_, err := FirestoreClient.Collection("prestamos").Doc(id).Update(r.Context(), []firestore.Update{
+
+	// ✅ Verifica límite de 15 días máximo
+	fechaNueva, err := time.Parse("2006-01-02", fecha)
+	if err != nil {
+		http.Redirect(w, r, "/mis-prestamos?error=fecha", http.StatusSeeOther)
+		return
+	}
+
+	if fechaNueva.After(time.Now().AddDate(0, 0, 15)) {
+		http.Redirect(w, r, "/mis-prestamos?error=max_15_dias", http.StatusSeeOther)
+		return
+	}
+
+	// ✅ Trae el préstamo actual para saber el libro
+	docSnap, err := FirestoreClient.Collection("prestamos").Doc(id).Get(r.Context())
+	if err != nil {
+		http.Redirect(w, r, "/mis-prestamos?error=no_encontrado", http.StatusSeeOther)
+		return
+	}
+
+	libro := docSnap.Data()["libro"].(string)
+
+	// ✅ Verifica si YA existe otro préstamo con el MISMO libro y fecha
+	iter := FirestoreClient.Collection("prestamos").
+		Where("libro", "==", libro).
+		Where("fecha", "==", fecha).
+		Documents(r.Context())
+
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+		if doc.Ref.ID != id {
+			// Existe otro préstamo con la misma fecha
+			http.Redirect(w, r, "/mis-prestamos?error=ocupado", http.StatusSeeOther)
+			return
+		}
+	}
+
+	// ✅ Si todo bien, actualiza fecha
+	_, err = FirestoreClient.Collection("prestamos").Doc(id).Update(r.Context(), []firestore.Update{
 		{Path: "fecha", Value: fecha},
 	})
-	if err != nil {
-		http.Error(w, "Error actualizando préstamo", http.StatusInternalServerError)
-		return
-	}
-	http.Redirect(w, r, "/mis-prestamos", http.StatusSeeOther)
-}
 
-func DevolverPrestamoHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
-		return
-	}
-	id := r.FormValue("id")
-	if id == "" {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-	_, err := FirestoreClient.Collection("prestamos").Doc(id).Delete(r.Context())
 	if err != nil {
-		http.Error(w, "Error eliminando préstamo", http.StatusInternalServerError)
+		http.Redirect(w, r, "/mis-prestamos?error=update_fail", http.StatusSeeOther)
 		return
 	}
-	http.Redirect(w, r, "/mis-prestamos", http.StatusSeeOther)
+
+	http.Redirect(w, r, "/mis-prestamos?success=editado", http.StatusSeeOther)
 }
 
 
@@ -255,12 +341,14 @@ func PersonasHandler(w http.ResponseWriter, r *http.Request) {
 func PrestamoHandler(w http.ResponseWriter, r *http.Request) {
 	usuario := ""
 	rol := ""
+
 	if c, err := r.Cookie("usuario"); err == nil {
 		usuario = c.Value
 	}
 	if c, err := r.Cookie("rol"); err == nil {
 		rol = c.Value
 	}
+
 	if usuario == "" {
 		http.Error(w, "⚠️ Debes iniciar sesión para registrar un préstamo", http.StatusUnauthorized)
 		return
@@ -268,7 +356,9 @@ func PrestamoHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		ctx := context.Background()
-		iter := FirestoreClient.Collection("libro").Documents(ctx)
+
+		// ✅ SOLO libros DISPONIBLES
+		iter := FirestoreClient.Collection("libro").Where("disponible", "==", true).Documents(ctx)
 
 		var libros []Libro
 		for {
@@ -286,11 +376,15 @@ func PrestamoHandler(w http.ResponseWriter, r *http.Request) {
 			Usuario string
 			Rol     string
 			Año     int
+			Query   map[string]string
 		}{
 			Libros:  libros,
 			Usuario: usuario,
 			Rol:     rol,
 			Año:     time.Now().Year(),
+			Query: map[string]string{
+				"error": r.URL.Query().Get("error"),
+			},
 		}
 
 		renderTemplate(w, r, "prestamos.html", data)
@@ -302,17 +396,43 @@ func PrestamoHandler(w http.ResponseWriter, r *http.Request) {
 		fecha := r.FormValue("fecha")
 
 		if usuario == "" || libro == "" || fecha == "" {
-			http.Error(w, "Todos los campos son obligatorios", http.StatusBadRequest)
+			http.Redirect(w, r, "/prestamos?error=incompleto", http.StatusSeeOther)
 			return
 		}
 
-		doc := Prestamo{
+		ctx := context.Background()
+
+		// ✅ Verifica que el libro siga disponible
+		iter := FirestoreClient.Collection("libro").
+			Where("nombre", "==", libro).
+			Where("disponible", "==", true).
+			Documents(ctx)
+
+		docSnap, err := iter.Next()
+		if err != nil {
+			// No hay libro disponible → ya está prestado
+			http.Redirect(w, r, "/prestamos?error=no_disponible", http.StatusSeeOther)
+			return
+		}
+
+		// ✅ Marca como NO disponible
+		_, err = docSnap.Ref.Update(ctx, []firestore.Update{
+			{Path: "disponible", Value: false},
+		})
+		if err != nil {
+			http.Error(w, "Error al actualizar disponibilidad", http.StatusInternalServerError)
+			log.Println("❌ Error al actualizar disponibilidad:", err)
+			return
+		}
+
+		// ✅ Crea el préstamo
+		prestamo := Prestamo{
 			Usuario: usuario,
 			Libro:   libro,
 			Fecha:   fecha,
 		}
 
-		_, _, err := FirestoreClient.Collection("prestamos").Add(context.Background(), doc)
+		_, _, err = FirestoreClient.Collection("prestamos").Add(ctx, prestamo)
 		if err != nil {
 			http.Error(w, "Error al registrar el préstamo", http.StatusInternalServerError)
 			log.Println("Error al guardar préstamo:", err)
@@ -320,18 +440,17 @@ func PrestamoHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Println("✅ Préstamo registrado:", usuario, "→", libro)
-		http.Redirect(w, r, "/mis-prestamos", http.StatusSeeOther)
+		http.Redirect(w, r, "/mis-prestamos?success=1", http.StatusSeeOther)
 		return
 	}
 
-	// Método no soportado
 	http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 }
-
 
 func RegistrarLibroHandler(w http.ResponseWriter, r *http.Request) {
 	usuario := ""
 	rol := ""
+
 	if c, err := r.Cookie("usuario"); err == nil {
 		usuario = c.Value
 	}
@@ -344,17 +463,112 @@ func RegistrarLibroHandler(w http.ResponseWriter, r *http.Request) {
 			Usuario string
 			Rol     string
 			Año     int
+			Query   map[string]string
 		}{
 			Usuario: usuario,
 			Rol:     rol,
 			Año:     time.Now().Year(),
+			Query: map[string]string{
+				"error":   r.URL.Query().Get("error"),
+				"success": r.URL.Query().Get("success"),
+			},
 		}
-
 		renderTemplate(w, r, "registrar_libro.html", data)
 		return
 	}
 
-	// POST lógico aquí...
+	if r.Method == http.MethodPost {
+		nombre := r.FormValue("nombre")
+		autor := r.FormValue("autor")
+		descripcion := r.FormValue("descripcion")
+		imagen := r.FormValue("imagen")
+		anoStr := r.FormValue("ano")
+
+		ano, err := strconv.Atoi(anoStr)
+		if err != nil || ano < 0 {
+			http.Redirect(w, r, "/registrar-libro?error=ano", http.StatusSeeOther)
+			return
+		}
+
+		// ✅ Verifica si YA existe
+		iter := FirestoreClient.Collection("libro").Where("nombre", "==", nombre).Documents(r.Context())
+		_, err = iter.Next()
+		if err == nil {
+			// Existe → redirige con error
+			http.Redirect(w, r, "/registrar-libro?error=existente", http.StatusSeeOther)
+			return
+		}
+
+		doc := map[string]interface{}{
+			"nombre":      nombre,
+			"autor":       autor,
+			"descripcion": descripcion,
+			"ano":         ano,
+			"imagen":      imagen,
+			"disponible":  true,
+		}
+
+		_, _, err = FirestoreClient.Collection("libro").Add(r.Context(), doc)
+		if err != nil {
+			http.Error(w, "Error al registrar libro", http.StatusInternalServerError)
+			log.Println("Error Firestore libro:", err)
+			return
+		}
+
+		log.Println("✅ Libro registrado:", nombre)
+		http.Redirect(w, r, "/registrar-libro?success=1", http.StatusSeeOther)
+	}
+}
+
+
+func DevolverPrestamoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.FormValue("id")
+	if id == "" {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Obtiene el préstamo
+	doc, err := FirestoreClient.Collection("prestamos").Doc(id).Get(r.Context())
+	if err != nil {
+		http.Error(w, "Error obteniendo préstamo", http.StatusInternalServerError)
+		return
+	}
+
+	libroNombre, ok := doc.Data()["libro"].(string)
+	if !ok || libroNombre == "" {
+		http.Error(w, "Datos del libro inválidos", http.StatusBadRequest)
+		return
+	}
+
+	// ✅ Elimina el préstamo
+	_, err = FirestoreClient.Collection("prestamos").Doc(id).Delete(r.Context())
+	if err != nil {
+		http.Error(w, "Error eliminando préstamo", http.StatusInternalServerError)
+		return
+	}
+
+	// ✅ Marca el libro como disponible otra vez
+	iter := FirestoreClient.Collection("libro").Where("nombre", "==", libroNombre).Documents(r.Context())
+	for {
+		libroDoc, err := iter.Next()
+		if err != nil {
+			break
+		}
+		_, err = libroDoc.Ref.Update(r.Context(), []firestore.Update{
+			{Path: "disponible", Value: true},
+		})
+		if err != nil {
+			log.Println("❌ Error al actualizar disponibilidad:", err)
+		}
+	}
+
+	http.Redirect(w, r, "/mis-prestamos", http.StatusSeeOther)
 }
 
 
@@ -366,4 +580,54 @@ func renderTemplate(w http.ResponseWriter, r *http.Request, archivo string, data
 		return
 	}
 	tmpl.ExecuteTemplate(w, "base", data)
+}
+func BuscarHandler(w http.ResponseWriter, r *http.Request) {
+	usuario := ""
+	rol := ""
+	if c, err := r.Cookie("usuario"); err == nil {
+		usuario = c.Value
+	}
+	if c, err := r.Cookie("rol"); err == nil {
+		rol = c.Value
+	}
+
+	// Obtener query de búsqueda
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Busca libros cuyo nombre contenga la consulta (solo exacto o prefijo)
+	iter := FirestoreClient.Collection("libro").Where("nombre", ">=", query).Where("nombre", "<=", query+"\uf8ff").Documents(ctx)
+
+	var libros []Libro
+	for {
+		doc, err := iter.Next()
+		if err != nil {
+			break
+		}
+		var libro Libro
+		doc.DataTo(&libro)
+		libros = append(libros, libro)
+	}
+
+	// Datos para la plantilla
+	data := struct {
+		Query   string
+		Libros  []Libro
+		Usuario string
+		Rol     string
+		Año     int
+	}{
+		Query:   query,
+		Libros:  libros,
+		Usuario: usuario,
+		Rol:     rol,
+		Año:     time.Now().Year(),
+	}
+
+	renderTemplate(w, r, "resultados.html", data)
 }
