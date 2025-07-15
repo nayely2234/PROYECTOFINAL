@@ -1,15 +1,13 @@
 package main
 
 import (
+	
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-// Mocks mínimos
-func setupTest() {
-	// Aquí puedes inicializar Firestore con mocks o usar un entorno de prueba
-}
+
 
 // ======= TEST: Registro sin datos =========
 func TestRegistrarHandlerEmptyForm(t *testing.T) {

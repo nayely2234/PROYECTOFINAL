@@ -112,7 +112,7 @@ func main() {
 	http.HandleFunc("/mis-prestamos", MisPrestamosHandler)
 	http.HandleFunc("/editar-prestamo", EditarPrestamoHandler)
 	http.HandleFunc("/devolver-prestamo", DevolverPrestamoHandler)
-	// http.HandleFunc("/buscar", BuscarHandler) // Descomenta si existe
+	http.HandleFunc("/buscar", BuscarHandler) // Descomenta si existe
 
 	// 🚩 Usa el puerto dinámico de Render
 	port := os.Getenv("PORT")

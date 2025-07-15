@@ -25,9 +25,9 @@ type Prestamo struct {
 	Fecha   string `firestore:"fecha"`
 }
 type PrestamoListado struct {
-	ID     string
-	Libro  string
-	Fecha  string
+	ID    string
+	Libro string
+	Fecha string
 }
 
 func InicioHandler(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +143,6 @@ func MisPrestamosHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.ExecuteTemplate(w, "base", data)
 }
 
-
 func EditarPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -209,8 +208,6 @@ func EditarPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/mis-prestamos?success=editado", http.StatusSeeOther)
 }
-
-
 
 func RegistrarHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
@@ -520,7 +517,6 @@ func RegistrarLibroHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func DevolverPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
@@ -571,8 +567,7 @@ func DevolverPrestamoHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/mis-prestamos", http.StatusSeeOther)
 }
 
-
-func renderTemplate(w http.ResponseWriter, r *http.Request, archivo string, data interface{}) {
+func renderTemplate(w http.ResponseWriter, _ *http.Request, archivo string, data interface{}) {
 	tmpl, err := template.ParseFiles("templates/base.html", "templates/"+archivo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
