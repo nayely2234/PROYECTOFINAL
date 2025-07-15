@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go/v4"
@@ -14,8 +15,12 @@ var FirestoreClient *firestore.Client
 func InitFirebase() {
 	ctx := context.Background()
 
-	// ✅ Leer directamente desde el archivo .json
-	opt := option.WithCredentialsFile("basebiblioteca-fe7d5-firebase-adminsdk-fbsvc-fa72da49bb.json")
+	// ✅ Leer credenciales desde variable de entorno
+	credJSON := []byte(os.Getenv("FIREBASE_CREDENTIALS"))
+	if len(credJSON) == 0 {
+		log.Fatal("❌ Variable FIREBASE_CREDENTIALS vacía o no definida")
+	}
+	opt := option.WithCredentialsJSON(credJSON)
 
 	config := &firebase.Config{
 		ProjectID: "basebiblioteca-fe7d5",
